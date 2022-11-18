@@ -1,4 +1,9 @@
 ```
+sh build_windows.sh
+sh run_windows.sh
+```
+
+```
 mkdir -p out/build
 cmake -S . -B out/build
 cd out/build
