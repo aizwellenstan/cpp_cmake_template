@@ -1,10 +1,16 @@
 #include <iostream>
-#include "adder.h"
+// #include "adder.h"
+#include<string>
 
 int main() {
-    std::cout << "CMake\n";
+    // std::cout << "CMake\n";
 
-    std::cout << add(1.2f, 2.1f) << '\n';
+    // std::cout << add(1.2f, 2.1f) << '\n';
+
+    std::string sourcePath = "";
+    std::cout << "Enter copy path: ";
+    std::cin >> sourcePath;
+    std::cout << "path: " << sourcePath;
 
     return 0;
 }
