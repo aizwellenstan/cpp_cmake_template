@@ -11,3 +11,5 @@ target_include_directories(${PROJECT_NAME} PRIVATE Adder)
 target_link_directories(${PROJECT_NAME} PRIVATE Adder)
 
 target_link_libraries(${PROJECT_NAME} adder)
+
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)

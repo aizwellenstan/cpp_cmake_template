@@ -3,6 +3,9 @@
 #include<string>
 
 //file
+#include <filesystem>
+using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
+
 #include "lib\dirent.h"
 #include <sys\stat.h>
 #include <conio.h>
@@ -17,34 +20,37 @@ int main() {
     std::cin >> sourcePath;
     std::cout << "path: " << sourcePath;
 
-    struct dirent *d;
-    struct stat dst;
+    for (const auto& dirEntry : recursive_directory_iterator(sourcePath))
+        std::cout << dirEntry << std::endl;
 
-    DIR *dr;
+    // struct dirent *d;
+    // struct stat dst;
 
-    dr = opendir(sourcePath.c_str());
+    // DIR *dr;
 
-    if (dr != NULL) 
-    {
-        for (d = readdir(dr); d != NULL; d = readdir(dr)) 
-        {
-            std::string type = d->d_name;
-            type = sourcePath + type;
-            if (stat(type.c_str(), &dst) ==  0) 
-            {
-                if (dst.st_mode & S_IFDIR) 
-                {
-                    type = " is a FOLDER.";
-                } 
-                else if (dst.st_mode & S_IFREG) 
-                {
-                    type = " is a FILE.";
-                }
-            }
-            std::cout << d->d_name + type << std::endl;
-        }
-        closedir(dr);
-    }
+    // dr = opendir(sourcePath.c_str());
+
+    // if (dr != NULL) 
+    // {
+    //     for (d = readdir(dr); d != NULL; d = readdir(dr)) 
+    //     {
+    //         std::string type = d->d_name;
+    //         type = sourcePath + type;
+    //         if (stat(type.c_str(), &dst) ==  0) 
+    //         {
+    //             if (dst.st_mode & S_IFDIR) 
+    //             {
+    //                 type = " is a FOLDER.";
+    //             } 
+    //             else if (dst.st_mode & S_IFREG) 
+    //             {
+    //                 type = " is a FILE.";
+    //             }
+    //         }
+    //         std::cout << d->d_name + type << std::endl;
+    //     }
+    //     closedir(dr);
+    // }
 
     return 0;
 }
