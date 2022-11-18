@@ -2,6 +2,11 @@
 // #include "adder.h"
 #include<string>
 
+//file
+#include "lib\dirent.h"
+#include <sys\stat.h>
+#include <conio.h>
+
 int main() {
     // std::cout << "CMake\n";
 
@@ -11,6 +16,35 @@ int main() {
     std::cout << "Enter copy path: ";
     std::cin >> sourcePath;
     std::cout << "path: " << sourcePath;
+
+    struct dirent *d;
+    struct stat dst;
+
+    DIR *dr;
+
+    dr = opendir(sourcePath.c_str());
+
+    if (dr != NULL) 
+    {
+        for (d = readdir(dr); d != NULL; d = readdir(dr)) 
+        {
+            std::string type = d->d_name;
+            type = sourcePath + type;
+            if (stat(type.c_str(), &dst) ==  0) 
+            {
+                if (dst.st_mode & S_IFDIR) 
+                {
+                    type = " is a FOLDER.";
+                } 
+                else if (dst.st_mode & S_IFREG) 
+                {
+                    type = " is a FILE.";
+                }
+            }
+            std::cout << d->d_name + type << std::endl;
+        }
+        closedir(dr);
+    }
 
     return 0;
 }
