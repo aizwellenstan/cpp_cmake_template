@@ -5,6 +5,8 @@
 //file
 #include <filesystem>
 using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
+#include <sstream>
+
 
 #include "lib\dirent.h"
 #include <sys\stat.h>
@@ -18,10 +20,34 @@ int main() {
     std::string sourcePath = "";
     std::cout << "Enter copy path: ";
     std::cin >> sourcePath;
-    std::cout << "path: " << sourcePath;
+    std::cout << "path: " << sourcePath << std::endl;
 
-    for (const auto& dirEntry : recursive_directory_iterator(sourcePath))
-        std::cout << dirEntry << std::endl;
+    for (const auto& entry : recursive_directory_iterator(sourcePath))
+        // std::cout << dirEntry << std::endl;
+        if (entry.path().extension().string() == ".mp4") {
+            // std::cout << entry << std::endl;
+
+            std::string fname = entry.path().stem().string();
+            std::cout << fname << std::endl;
+
+            std::stringstream  data(fname);
+
+            std::string line;
+            std::vector<std::string> result = {};
+            while(std::getline(data,line,'_'))
+            {
+                result.push_back(line); // Note: You may get a couple of blank lines
+                                        // When multiple underscores are beside each other.
+            }
+
+            std::string prj = result[0];
+            std::cout << result[0] << std::endl;
+
+            // std::vector<std::string> result = explode(fname, '_');
+            // for (size_t i = 0; i < result.size(); i++) {
+            //     std::cout << "\"" << result[i] << "\"" << std::endl;
+            // }
+        }
 
     // struct dirent *d;
     // struct stat dst;
