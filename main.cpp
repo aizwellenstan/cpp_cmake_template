@@ -7,7 +7,6 @@
 using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
 #include <sstream>
 
-
 #include "lib\dirent.h"
 #include <sys\stat.h>
 #include <conio.h>
@@ -21,6 +20,7 @@ int main() {
     std::cout << "Enter copy path: ";
     std::cin >> sourcePath;
     std::cout << "path: " << sourcePath << std::endl;
+    std::string basePath = "I:\\tiok23yt\\shot\\";
 
     for (const auto& entry : recursive_directory_iterator(sourcePath))
         // std::cout << dirEntry << std::endl;
@@ -28,6 +28,7 @@ int main() {
             // std::cout << entry << std::endl;
 
             std::string fname = entry.path().stem().string();
+            std::cout << entry << std::endl;
             std::cout << fname << std::endl;
 
             std::stringstream  data(fname);
@@ -40,8 +41,19 @@ int main() {
                                         // When multiple underscores are beside each other.
             }
 
-            std::string prj = result[0];
-            std::cout << result[0] << std::endl;
+            std::string destanation = basePath+result[0]+"\\"+result[1]+"\\"+result[2]+"\\04_comp\\finalimage\\02_anim\\"+entry.path().filename().string();
+            // file = entry.path().filename().string();
+            
+            // std::cout << "xcopy " + entry.path().string() + " " + destanation << std::endl;
+            // std::string command = "xcopy " +  +entry.path().string() + " " + destanation+"*";
+
+            std::ostringstream oss;
+            oss << "xcopy " <<"\""<<entry.path().string() << "\"" << " " << destanation << "*" << " /Y"; // prevent space in source path
+            std::string command = oss.str();
+            std::cout << command << std::endl;
+            system(command.c_str());
+
+            // system("DATE");
 
             // std::vector<std::string> result = explode(fname, '_');
             // for (size_t i = 0; i < result.size(); i++) {

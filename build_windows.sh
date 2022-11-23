@@ -5,4 +5,4 @@ cd out/build
 
 "C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe" CMAKE.sln
 
-cp ./Debug/CMAKE.exe ../../builds/windows-x64/
+cp ./Release/CMAKE.exe ../../builds/windows-x64/
