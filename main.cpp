@@ -13,52 +13,6 @@ using recursive_directory_iterator = std::filesystem::recursive_directory_iterat
 // std::string sSelectedFile;
 // std::string sFilePath;
 
-static int CALLBACK BrowseCallbackProc(HWND hwnd,UINT uMsg, LPARAM lParam, LPARAM lpData)
-{
-
-    if(uMsg == BFFM_INITIALIZED)
-    {
-        std::string tmp = (const char *) lpData;
-        std::cout << "path: " << tmp << std::endl;
-        SendMessage(hwnd, BFFM_SETSELECTION, TRUE, lpData);
-    }
-
-    return 0;
-}
-
-std::string BrowseFolder(std::string saved_path)
-{
-    TCHAR path[MAX_PATH];
-
-    const char * path_param = saved_path.c_str();
-
-    BROWSEINFO bi = { 0 };
-    bi.lpszTitle  = ("Browse for folder...");
-    bi.ulFlags    = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
-    bi.lpfn       = BrowseCallbackProc;
-    bi.lParam     = (LPARAM) path_param;
-
-    LPITEMIDLIST pidl = SHBrowseForFolder ( &bi );
-
-    if ( pidl != 0 )
-    {
-        //get the name of the folder and put it in path
-        SHGetPathFromIDList ( pidl, path );
-
-        //free memory used
-        IMalloc * imalloc = 0;
-        if ( SUCCEEDED( SHGetMalloc ( &imalloc )) )
-        {
-            imalloc->Free ( pidl );
-            imalloc->Release ( );
-        }
-
-        return path;
-    }
-
-    return "";
-}
-
 // bool openFile()
 // {
 //     //  CREATE FILE OBJECT INSTANCE
@@ -119,20 +73,19 @@ std::string BrowseFolder(std::string saved_path)
 // }
 
 int main() {
-    // std::string path = BrowseFolder("I:/");
     // std::cout << path << std::endl;
-    bool result = FALSE;
-    result = openFile();
-    switch (result) {
-        case(TRUE): {
-            printf("SELECTED FILE: %s\nFILE PATH: %s\n\n", sSelectedFile.c_str(), sFilePath.c_str());
-            system("pause");
-        }
-        case(FALSE): {
-            printf("ENCOUNTERED AN ERROR: (%d)\n", GetLastError());
-            system("pause");
-        }
-    }
+    // bool result = FALSE;
+    // result = openFile();
+    // switch (result) {
+    //     case(TRUE): {
+    //         printf("SELECTED FILE: %s\nFILE PATH: %s\n\n", sSelectedFile.c_str(), sFilePath.c_str());
+    //         system("pause");
+    //     }
+    //     case(FALSE): {
+    //         printf("ENCOUNTERED AN ERROR: (%d)\n", GetLastError());
+    //         system("pause");
+    //     }
+    // }
     // std::cout << "CMake\n";
 
     // std::cout << add(1.2f, 2.1f) << '\n';
