@@ -1,32 +1,150 @@
 #include <iostream>
 // #include "adder.h"
-#include<string>
+#include <string>
 
 //file
 #include <filesystem>
 using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
 #include <sstream>
 
-#include "lib\dirent.h"
-#include <sys\stat.h>
-#include <conio.h>
+#include <windows.h>
+#include <shlobj.h>
+
+// std::string sSelectedFile;
+// std::string sFilePath;
+
+static int CALLBACK BrowseCallbackProc(HWND hwnd,UINT uMsg, LPARAM lParam, LPARAM lpData)
+{
+
+    if(uMsg == BFFM_INITIALIZED)
+    {
+        std::string tmp = (const char *) lpData;
+        std::cout << "path: " << tmp << std::endl;
+        SendMessage(hwnd, BFFM_SETSELECTION, TRUE, lpData);
+    }
+
+    return 0;
+}
+
+std::string BrowseFolder(std::string saved_path)
+{
+    TCHAR path[MAX_PATH];
+
+    const char * path_param = saved_path.c_str();
+
+    BROWSEINFO bi = { 0 };
+    bi.lpszTitle  = ("Browse for folder...");
+    bi.ulFlags    = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+    bi.lpfn       = BrowseCallbackProc;
+    bi.lParam     = (LPARAM) path_param;
+
+    LPITEMIDLIST pidl = SHBrowseForFolder ( &bi );
+
+    if ( pidl != 0 )
+    {
+        //get the name of the folder and put it in path
+        SHGetPathFromIDList ( pidl, path );
+
+        //free memory used
+        IMalloc * imalloc = 0;
+        if ( SUCCEEDED( SHGetMalloc ( &imalloc )) )
+        {
+            imalloc->Free ( pidl );
+            imalloc->Release ( );
+        }
+
+        return path;
+    }
+
+    return "";
+}
+
+// bool openFile()
+// {
+//     //  CREATE FILE OBJECT INSTANCE
+//     HRESULT f_SysHr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+//     if (FAILED(f_SysHr))
+//         return FALSE;
+
+//     // CREATE FileOpenDialog OBJECT
+//     IFileOpenDialog* f_FileSystem;
+//     f_SysHr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&f_FileSystem));
+//     if (FAILED(f_SysHr)) {
+//         CoUninitialize();
+//         return FALSE;
+//     }
+
+//     //  SHOW OPEN FILE DIALOG WINDOW
+//     f_SysHr = f_FileSystem->Show(NULL);
+//     if (FAILED(f_SysHr)) {
+//         f_FileSystem->Release();
+//         CoUninitialize();
+//         return FALSE;
+//     }
+
+//     //  RETRIEVE FILE NAME FROM THE SELECTED ITEM
+//     IShellItem* f_Files;
+//     f_SysHr = f_FileSystem->GetResult(&f_Files);
+//     if (FAILED(f_SysHr)) {
+//         f_FileSystem->Release();
+//         CoUninitialize();
+//         return FALSE;
+//     }
+
+//     //  STORE AND CONVERT THE FILE NAME
+//     PWSTR f_Path;
+//     f_SysHr = f_Files->GetDisplayName(SIGDN_FILESYSPATH, &f_Path);
+//     if (FAILED(f_SysHr)) {
+//         f_Files->Release();
+//         f_FileSystem->Release();
+//         CoUninitialize();
+//         return FALSE;
+//     }
+
+//     //  FORMAT AND STORE THE FILE PATH
+//     std::wstring path(f_Path);
+//     std::string c(path.begin(), path.end());
+//     sFilePath = c;
+
+//     //  FORMAT STRING FOR EXECUTABLE NAME
+//     const size_t slash = sFilePath.find_last_of("/\\");
+//     sSelectedFile = sFilePath.substr(slash + 1);
+
+//     //  SUCCESS, CLEAN UP
+//     CoTaskMemFree(f_Path);
+//     f_Files->Release();
+//     f_FileSystem->Release();
+//     CoUninitialize();
+//     return TRUE;
+// }
 
 int main() {
+    // std::string path = BrowseFolder("I:/");
+    // std::cout << path << std::endl;
+    bool result = FALSE;
+    result = openFile();
+    switch (result) {
+        case(TRUE): {
+            printf("SELECTED FILE: %s\nFILE PATH: %s\n\n", sSelectedFile.c_str(), sFilePath.c_str());
+            system("pause");
+        }
+        case(FALSE): {
+            printf("ENCOUNTERED AN ERROR: (%d)\n", GetLastError());
+            system("pause");
+        }
+    }
     // std::cout << "CMake\n";
 
     // std::cout << add(1.2f, 2.1f) << '\n';
-
+    // MessageBox( nullptr, TEXT( "The driver is sleeping!!" ), TEXT( "Message" ), MB_OK );
     std::string sourcePath = "";
-    std::cout << "Enter copy path: ";
-    std::cin >> sourcePath;
+    // std::cout << "Enter copy path: ";
+    // std::cin >> sourcePath;
     std::cout << "path: " << sourcePath << std::endl;
     std::string basePath = "I:\\tiok23yt\\shot\\";
 
     for (const auto& entry : recursive_directory_iterator(sourcePath))
-        // std::cout << dirEntry << std::endl;
         if (entry.path().extension().string() == ".mp4") {
-            // std::cout << entry << std::endl;
-
             std::string fname = entry.path().stem().string();
             std::cout << entry << std::endl;
             std::cout << fname << std::endl;
@@ -52,13 +170,6 @@ int main() {
             std::string command = oss.str();
             std::cout << command << std::endl;
             system(command.c_str());
-
-            // system("DATE");
-
-            // std::vector<std::string> result = explode(fname, '_');
-            // for (size_t i = 0; i < result.size(); i++) {
-            //     std::cout << "\"" << result[i] << "\"" << std::endl;
-            // }
         }
 
     // struct dirent *d;
