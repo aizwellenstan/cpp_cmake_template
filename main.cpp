@@ -12,11 +12,53 @@ using recursive_directory_iterator = std::filesystem::recursive_directory_iterat
 #include <fstream>
 #include <cstdlib>
 #include <regex>
+#include <algorithm>
 
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING 1;
 #include <experimental/filesystem> // or #include <filesystem> for C++17 and up
     
 namespace fs = std::experimental::filesystem;
+
+std::string NormalizePath(const std::string& messyPath) {
+    std::filesystem::path path(messyPath);
+    std::filesystem::path canonicalPath = std::filesystem::weakly_canonical(path);
+    std::string npath = canonicalPath.make_preferred().string();
+    return npath;
+}
+
+std::vector<std::string> AppendToVector(std::vector<std::string> v, std::string x) {
+    if(!(std::find(v.begin(), v.end(), x) != v.end())) {
+        v.push_back(x);
+    }
+    return v;
+}
+
+int CreateFolderIfNotExist(std::string folder) {
+    if (!fs::is_directory(folder) || !fs::exists(folder)) { // Check if src folder exists
+        std::ostringstream oss;
+        oss << "mkdir " + folder; // prevent space in source path
+        std::string command = oss.str();
+        std::cout << command << std::endl;
+        system(command.c_str());
+    }
+    return 0;
+}
+
+int CopyFileAndFolderCommand(std::string file, std::string destanation) {
+    CreateFolderIfNotExist(destanation);
+    std::cout << destanation << std::endl;
+    std::replace(file.begin(), file.end(), '/', '\\');
+    std::ostringstream oss;
+    if (fs::is_directory(file)) {
+        oss << "xcopy " <<"\""<< file << "\"" << " " << destanation <<  "\\" << "*" << " /Y"; // prevent space in source path
+    } else {
+        oss << "xcopy " <<"\""<< file  << "\"" << " " << destanation << " /Y"; // prevent space in source path
+    } // is file
+    std::string command = oss.str();
+    std::cout << command << std::endl;
+    system(command.c_str());
+    return 0;
+}
 
 std::string getPath(std::string s) {
     std::vector<std::string> result = {};
@@ -29,6 +71,7 @@ std::string getPath(std::string s) {
     }
     s = result[result.size()-1];
     s.erase(remove(s.begin(), s.end(), '\"'),s.end()); // remove double quotes
+    s = NormalizePath(s);
     return s;
 }
 
@@ -40,6 +83,7 @@ std::vector<std::string> getReference(std::string s) {
         while (std::getline(file, line,';')) {
             if (line.find("J:") != std::string::npos) {
                 line = getPath(line);
+                if (line == "") continue;
                 result.push_back(line);
             }  
         }
@@ -48,24 +92,8 @@ std::vector<std::string> getReference(std::string s) {
     return result;
 }
 
-int createFolderIfNotExist(std::string folder) {
-    if (!fs::is_directory(folder) || !fs::exists(folder)) { // Check if src folder exists
-        fs::create_directory(folder); // create src folder
-    }
-    return 0;
-}
-
-int sendCopyCommand(std::string file, std::string destanation) {
-    std::replace(file.begin(), file.end(), '/', '\\');
-    std::ostringstream oss;
-    oss << "xcopy " <<"\""<< file  << "\"" << " " << destanation << " /Y"; // prevent space in source path
-    std::string command = oss.str();
-    std::cout << command << std::endl;
-    // system(command.c_str());
-    return 0;
-}
-
 int writeSourceFileToTxt(std::string fPath, std::string shotFolder) {
+    CreateFolderIfNotExist(shotFolder);
     std::ofstream myfile (shotFolder+"\\filePath.txt", std::ios_base::app);
     if (myfile.is_open())
     {
@@ -85,40 +113,51 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
         result.push_back(line); // Note: You may get a couple of blank lines
                                 // When multiple underscores are beside each other.
     }
-
-    
-    // for(std::string i : result) 
-    //     std::cout << i << std::endl;
-    
-    // if (result.size() < 6)
-    //     std::cout << "FAILED " << fPath << std::endl;
-    //     return -1;
-    // std::cout << fPath << std::endl;
     std::string seq = result[5];
     std::string shot = result[6];
 
     std::string seqFolder = bkpRootFolder + "\\" + seq;
     std::string shotFolder = seqFolder + "\\" + shot;
+    std::string assFolder = shotFolder + "\\cache\\ass";
+    std::string abcFolder = shotFolder + "\\cache\\alembic";
+    std::string exrFolder = shotFolder + "\\sourceimages";
 
-    // std::cout << fPath << std::endl;
-
-    createFolderIfNotExist(seqFolder);
-    createFolderIfNotExist(shotFolder);
+    std::vector<std::string> sceneList = {};
+    std::vector<std::string> assList = {};
+    std::vector<std::string> abcList = {};
+    std::vector<std::string> exrList = {};
 
     std::vector<std::string> refResult = getReference(fPath);
+
     for(std::string i : refResult) {
-        std::cout << i << std::endl;
+        // std::cout << i << std::endl;
         std::filesystem::path fPath = i;
-        std::cout << fPath.extension().string() << std::endl;
+        // std::cout << fPath.extension().string() << std::endl;
         if (fPath.extension().string() == ".ocio") continue;
         if (fPath.extension().string() == ".ass") {
-            std::cout << fPath.parent_path().string() << std::endl;
+            assList = AppendToVector(assList, fPath.parent_path().string());
+        } else if (fPath.extension().string() == ".abc") {
+            abcList = AppendToVector(abcList, fPath.parent_path().string());
+        } else if (fPath.extension().string() == ".exr") {
+            exrList = AppendToVector(exrList, fPath.parent_path().string());
+        } else {
+            sceneList = AppendToVector(sceneList, fPath.string());
         }
-        sendCopyCommand(i, shotFolder);
-        // writeSourceFileToTxt(i, shotFolder);
-        
+        writeSourceFileToTxt(i, shotFolder);
     }
-    
+
+    for(std::string i : sceneList) {
+        std::cout << i << std::endl;
+        CopyFileAndFolderCommand(i, shotFolder);
+    }
+    for(std::string i : assList) {
+        std::cout << i << std::endl;
+        CopyFileAndFolderCommand(i, assFolder);
+    }
+    for(std::string i : exrList) {
+        std::cout << i << std::endl;
+        CopyFileAndFolderCommand(i, exrFolder);
+    }
 
     return 0;
 }
@@ -139,10 +178,7 @@ int getFileVersion(std::string fPath) {
         res = res.erase(0,1);
         int ver = atoi(res.c_str());
         return ver;
-    } else {
-        // std::cout << "REGEX ERR "<< res << std::endl;
-        return -1;
-    }
+    } else return -1;
 }
 
 int main(int argc, const char**argv) {
@@ -188,7 +224,6 @@ int main(int argc, const char**argv) {
                         // std::cout << latestVersion << " " << latestFilePath << std::endl;
                         copyFile(latestFilePath, bkpFolder);
                     }
-                        
                 }
             } 
         }
