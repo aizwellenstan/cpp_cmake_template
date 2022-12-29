@@ -49,8 +49,20 @@ int CopyFileAndFolderCommand(std::string file, std::string destanation) {
     std::cout << destanation << std::endl;
     std::replace(file.begin(), file.end(), '/', '\\');
     std::ostringstream oss;
+
+    std::vector<std::string> result = {};
+    std::stringstream  data(file);
+    std::string line;
+    while(std::getline(data,line,'\\'))
+    {
+        result.push_back(line); // Note: You may get a couple of blank lines
+                                // When multiple underscores are beside each other.
+    }
+    std::string folderName = result[result.size()-1].c_str();
+
     if (fs::is_directory(file)) {
-        oss << "xcopy " <<"\""<< file << "\"" << " " << destanation <<  "\\" << "*" << " /Y"; // prevent space in source path
+        // oss << "xcopy " <<"\""<< file << "\"" << " " << destanation <<  "\\" << "*" << " /Y"; // prevent space in source path
+        oss << "xcopy " <<"\""<< file << "\"" << " " << destanation <<  "\\" << folderName << "\\" <<"*" << " /Y /I /S /J"; // prevent space in source path
     } else {
         oss << "xcopy " <<"\""<< file  << "\"" << " " << destanation << " /Y"; // prevent space in source path
     } // is file
@@ -121,11 +133,13 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
     std::string assFolder = shotFolder + "\\cache\\ass";
     std::string abcFolder = shotFolder + "\\cache\\alembic";
     std::string exrFolder = shotFolder + "\\sourceimages";
+    std::string vdbFolder = shotFolder + "\\cache\\vdb";
 
     std::vector<std::string> sceneList = {};
     std::vector<std::string> assList = {};
     std::vector<std::string> abcList = {};
     std::vector<std::string> exrList = {};
+    std::vector<std::string> vdbList = {};
 
     std::vector<std::string> refResult = getReference(fPath);
 
@@ -140,6 +154,8 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
             abcList = AppendToVector(abcList, fPath.parent_path().string());
         } else if (fPath.extension().string() == ".exr") {
             exrList = AppendToVector(exrList, fPath.parent_path().string());
+        } else if (fPath.extension().string() == ".vdb") {
+            vdbList = AppendToVector(vdbList, fPath.parent_path().string());
         } else {
             sceneList = AppendToVector(sceneList, fPath.string());
         }
@@ -154,9 +170,17 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
         std::cout << i << std::endl;
         CopyFileAndFolderCommand(i, assFolder);
     }
+    for(std::string i : abcList) {
+        std::cout << i << std::endl;
+        CopyFileAndFolderCommand(i, abcFolder);
+    }
     for(std::string i : exrList) {
         std::cout << i << std::endl;
         CopyFileAndFolderCommand(i, exrFolder);
+    }
+    for(std::string i : vdbList) {
+        std::cout << i << std::endl;
+        CopyFileAndFolderCommand(i, vdbFolder);
     }
 
     return 0;
@@ -185,7 +209,7 @@ int main(int argc, const char**argv) {
     std::string proj = "vd2";
     std::string rootPath = "J:\\"+proj+"\\work\\prod\\lig";
     // std::string bkpFolder = "J:\\"+proj+"\\work\\prod\\lig\\pkg";
-    std::string bkpFolder = "J:\\vd2\\work\\ftp\\TEST\\pkg2";
+    std::string bkpFolder = "\\\\isilon-nl\\archive\\packet\\vd2\\work\\prod\\lig";
 
     for (const auto& seq : fs::directory_iterator(rootPath)) {
         if (fs::is_directory(seq)) {
