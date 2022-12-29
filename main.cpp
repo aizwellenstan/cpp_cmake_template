@@ -55,13 +55,11 @@ int CopyFileAndFolderCommand(std::string file, std::string destanation) {
     std::string line;
     while(std::getline(data,line,'\\'))
     {
-        result.push_back(line); // Note: You may get a couple of blank lines
-                                // When multiple underscores are beside each other.
+        result.push_back(line);
     }
     std::string folderName = result[result.size()-1].c_str();
 
     if (fs::is_directory(file)) {
-        // oss << "xcopy " <<"\""<< file << "\"" << " " << destanation <<  "\\" << "*" << " /Y"; // prevent space in source path
         oss << "xcopy " <<"\""<< file << "\"" << " " << destanation <<  "\\" << folderName << "\\" <<"*" << " /Y /I /S /J"; // prevent space in source path
     } else {
         oss << "xcopy " <<"\""<< file  << "\"" << " " << destanation << " /Y"; // prevent space in source path
@@ -78,8 +76,7 @@ std::string getPath(std::string s) {
     std::string line;
     while(std::getline(data,line,' '))
     {
-        result.push_back(line); // Note: You may get a couple of blank lines
-                                // When multiple underscores are beside each other.
+        result.push_back(line);
     }
     s = result[result.size()-1];
     s.erase(remove(s.begin(), s.end(), '\"'),s.end()); // remove double quotes
@@ -122,8 +119,7 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
     std::string line;
     while(std::getline(data,line,'\\'))
     {
-        result.push_back(line); // Note: You may get a couple of blank lines
-                                // When multiple underscores are beside each other.
+        result.push_back(line);
     }
     std::string seq = result[5];
     std::string shot = result[6];
@@ -144,9 +140,7 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
     std::vector<std::string> refResult = getReference(fPath);
 
     for(std::string i : refResult) {
-        // std::cout << i << std::endl;
         std::filesystem::path fPath = i;
-        // std::cout << fPath.extension().string() << std::endl;
         if (fPath.extension().string() == ".ocio") continue;
         if (fPath.extension().string() == ".ass") {
             assList = AppendToVector(assList, fPath.parent_path().string());
@@ -208,7 +202,6 @@ int getFileVersion(std::string fPath) {
 int main(int argc, const char**argv) {
     std::string proj = "vd2";
     std::string rootPath = "J:\\"+proj+"\\work\\prod\\lig";
-    // std::string bkpFolder = "J:\\"+proj+"\\work\\prod\\lig\\pkg";
     std::string bkpFolder = "\\\\isilon-nl\\archive\\packet\\vd2\\work\\prod\\lig";
 
     for (const auto& seq : fs::directory_iterator(rootPath)) {
@@ -218,7 +211,6 @@ int main(int argc, const char**argv) {
             for (const auto& shot : fs::directory_iterator(seq)) {
                 if (fs::is_directory(shot)) {
                     const auto shotStr = shot.path().filename().string();
-                    
                     int latestVersion = 0;
                     std::string latestFilePath = "";
                     for (const auto& scene : fs::directory_iterator(shot.path().string()+"\\scenes")) {
@@ -229,8 +221,6 @@ int main(int argc, const char**argv) {
                             // std::cout << "shot:  " << shotStr << '\n';
                             // std::cout << "scene:  " << sceneStr << '\n';
                             std::string fPath = scene.path().filename().string();
-                            // std::cout << fPath << std::endl;
-
                             size_t lastindex = fPath.find_last_of("."); 
                             std::string rawname = fPath.substr(0, lastindex); 
 
@@ -239,75 +229,15 @@ int main(int argc, const char**argv) {
                                 latestVersion = version;
                                 latestFilePath = scene.path().string();
                             }
-                            // std::cout << scene.path().string() << " " << version << " " << latestVersion <<std::endl;
-                            // std::cout << latestVersion << " " << latestFilePath << std::endl;
                         }
                     }
                     
                     if (latestFilePath != "") {
-                        // std::cout << latestVersion << " " << latestFilePath << std::endl;
                         copyFile(latestFilePath, bkpFolder);
                     }
                 }
             } 
         }
     }
-    // for (const auto& entry : recursive_directory_iterator(rootPath))
-    // {
-    //     if (entry.path().extension().string() != ".ma") continue;
-    //     std::string fPath = entry.path().string();
-
-    //     copyFile(fPath, bkpFolder);
-    // }
-
-
-    // // std::string fPath = "D:\\vd2_s062_280_lig_v004.ma";
-    // std::string fPath = "D:\\vd2_s026b_010_lig_v009.ma";
-    
-    // std::vector<std::string> result = getReference(fPath);
-
-    // // std::cout << result[0] << std::endl;
-    // for(std::string i : result) 
-    //     std::cout << i << std::endl;
-    
-	return 0;
-    
-
-
-
-    
-    // std::string sourcePath = "";
-    // std::cout << "path: " << sourcePath << std::endl;
-    // std::string basePath = "I:\\tiok23yt\\shot\\";
-
-    // for (const auto& entry : recursive_directory_iterator(sourcePath))
-    //     if (entry.path().extension().string() == ".mp4") {
-    //         std::string fname = entry.path().stem().string();
-    //         std::cout << entry << std::endl;
-    //         std::cout << fname << std::endl;
-
-    //         std::stringstream  data(fname);
-
-    //         std::string line;
-    //         std::vector<std::string> result = {};
-    //         while(std::getline(data,line,'_'))
-    //         {
-    //             result.push_back(line); // Note: You may get a couple of blank lines
-    //                                     // When multiple underscores are beside each other.
-    //         }
-
-    //         std::string destanation = basePath+result[0]+"\\"+result[1]+"\\"+result[2]+"\\04_comp\\finalimage\\02_anim\\"+entry.path().filename().string();
-    //         // file = entry.path().filename().string();
-            
-    //         // std::cout << "xcopy " + entry.path().string() + " " + destanation << std::endl;
-    //         // std::string command = "xcopy " +  +entry.path().string() + " " + destanation+"*";
-
-    //         std::ostringstream oss;
-    //         oss << "xcopy " <<"\""<<entry.path().string() << "\"" << " " << destanation << "*" << " /Y"; // prevent space in source path
-    //         std::string command = oss.str();
-    //         std::cout << command << std::endl;
-    //         system(command.c_str());
-    //     }
-
     return 0;
 }
