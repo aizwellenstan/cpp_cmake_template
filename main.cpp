@@ -27,7 +27,9 @@ std::string getPath(std::string s) {
         result.push_back(line); // Note: You may get a couple of blank lines
                                 // When multiple underscores are beside each other.
     }
-    return result[result.size()-1].c_str();
+    s = result[result.size()-1];
+    s.erase(remove(s.begin(), s.end(), '\"'),s.end()); // remove double quotes
+    return s;
 }
 
 std::vector<std::string> getReference(std::string s) {
@@ -91,14 +93,14 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
     // if (result.size() < 6)
     //     std::cout << "FAILED " << fPath << std::endl;
     //     return -1;
-    std::cout << fPath << std::endl;
+    // std::cout << fPath << std::endl;
     std::string seq = result[5];
     std::string shot = result[6];
 
     std::string seqFolder = bkpRootFolder + "\\" + seq;
     std::string shotFolder = seqFolder + "\\" + shot;
 
-    std::cout << fPath << std::endl;
+    // std::cout << fPath << std::endl;
 
     createFolderIfNotExist(seqFolder);
     createFolderIfNotExist(shotFolder);
@@ -106,8 +108,15 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
     std::vector<std::string> refResult = getReference(fPath);
     for(std::string i : refResult) {
         std::cout << i << std::endl;
+        std::filesystem::path fPath = i;
+        std::cout << fPath.extension().string() << std::endl;
+        if (fPath.extension().string() == ".ocio") continue;
+        if (fPath.extension().string() == ".ass") {
+            std::cout << fPath.parent_path().string() << std::endl;
+        }
         sendCopyCommand(i, shotFolder);
-        writeSourceFileToTxt(i, shotFolder);
+        // writeSourceFileToTxt(i, shotFolder);
+        
     }
     
 
