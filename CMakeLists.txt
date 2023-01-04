@@ -12,6 +12,8 @@ target_link_directories(${PROJECT_NAME} PRIVATE Adder)
 
 target_link_libraries(${PROJECT_NAME} adder)
 
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
 set(CMAKE_CONFIGURATION_TYPES "Release" CACHE STRING "" FORCE)
+
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
