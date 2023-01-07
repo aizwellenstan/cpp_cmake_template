@@ -94,9 +94,39 @@ std::vector<std::string> getReference(std::string s) {
     std::ifstream file(s);
     if (file.is_open()) {
         std::string line;
-        while (std::getline(file, line,';')) {
+        while (std::getline(file, line)) {
             if (line.find("J:") != std::string::npos) {
                 line = getPath(line);
+                if (line == "") continue;
+                result.push_back(line);
+            }  
+        }
+        file.close();
+    }
+    return result;
+}
+
+std::string getOriginPath(std::string s) {
+    std::vector<std::string> result = {};
+    std::stringstream  data(s);
+    std::string line;
+    while(std::getline(data,line,' '))
+    {
+        result.push_back(line);
+    }
+    s = result[result.size()-1];
+    s.erase(remove(s.begin(), s.end(), '\"'),s.end()); // remove double quotes
+    return s;
+}
+
+std::vector<std::string> getOriginReference(std::string s) {
+    std::vector<std::string> result = {};
+    std::ifstream file(s);
+    if (file.is_open()) {
+        std::string line;
+        while (std::getline(file, line)) {
+            if (line.find("J:") != std::string::npos) {
+                line = getOriginPath(line);
                 if (line == "") continue;
                 result.push_back(line);
             }  
@@ -118,6 +148,109 @@ int writeSourceFileToTxt(std::string fPath, std::string shotFolder) {
     return 0;
 }
 
+std::string getFileName(std::string s) {
+    std::vector<std::string> result = {};
+    std::stringstream  data(s);
+    std::string line;
+    while(std::getline(data,line,'/'))
+    {
+        result.push_back(line);
+    }
+    s = result[result.size()-1];
+    return s;
+}
+
+std::string getAssName(std::string s) {
+    std::vector<std::string> result = {};
+    std::stringstream  data(s);
+    std::string line;
+    while(std::getline(data,line,'.'))
+    {
+        result.push_back(line);
+    }
+    s = result[0];
+    return s;
+}
+
+std::string ReplaceString(std::string line, std::string wordToReplace, std::string wordToReplaceWith) {
+    size_t len = wordToReplace.length();
+    size_t pos = line.find(wordToReplace);
+    if (pos != std::string::npos)
+        line.replace(pos, len, wordToReplaceWith);
+    std::cout << "ReplaceString: " << line << std::endl;
+    return line;
+}
+
+int replaceReference(std::string inPath, std::string outPath, std::vector<std::string> refResult, std::string wordToReplaceWith) {
+    std::string wordToReplace = "";
+    std::string fileName = "";
+    std::vector<std::vector<std::string>> v;
+    for(std::string i : refResult) {
+        std::filesystem::path fPath = NormalizePath(i);
+        std::cout << i << std::endl;
+        if (fPath.extension().string() == ".ocio") continue;
+        if (fPath.extension().string() == ".ass") {
+            wordToReplace = i;
+            fileName = getFileName(i);
+            fileName = getAssName(fileName) + "/" + fileName;
+            wordToReplace = regex_replace(wordToReplace, std::regex(fileName), "");
+            wordToReplaceWith = "./cache/ass/";
+        } else if (fPath.extension().string() == ".abc") {
+            wordToReplace = i;
+            wordToReplace = regex_replace(wordToReplace, std::regex(getFileName(i)), "");
+            wordToReplaceWith = "./cache/alembic/";
+        } else if (fPath.extension().string() == ".exr" || fPath.extension().string() == ".tif") {
+            wordToReplace = i;
+            wordToReplace = regex_replace(wordToReplace, std::regex(getFileName(i)), "");
+            wordToReplaceWith = "./sourceimages/";
+        } else if (fPath.extension().string() == ".vdb") {
+            wordToReplace = i;
+            wordToReplace = regex_replace(wordToReplace, std::regex(getFileName(i)), "");
+            wordToReplaceWith = "./cache/vdb/";
+        }
+        if(wordToReplace == "") continue;
+
+        v.push_back({wordToReplace, wordToReplaceWith});
+    }
+    std::ifstream in(inPath);
+    std::ofstream out(outPath);
+    if (in.is_open()) {
+        std::string line;
+        while (std::getline(in, line)) {
+            if (line.find("J:") != std::string::npos) {
+                if (line.find("ocio") != std::string::npos) continue;
+                for(int i=0;i<v.size();i++){
+                    wordToReplace = v[i][0];
+                    wordToReplaceWith = v[i][1];
+                    line = ReplaceString(line, wordToReplace, wordToReplaceWith);
+                }
+            }
+            out << line << '\n';
+        }
+        in.close();
+    }
+    return 0;
+}
+
+int writeRelativePathMa(std::vector<std::string> refResult, std::string fPath, std::string shotFolder, std::string originalPath) {
+    CreateFolderIfNotExist(shotFolder);
+    std::cout << fPath << std::endl;
+    std::vector<std::string> result = {};
+    std::stringstream  data(fPath);
+    std::string line;
+    while(std::getline(data,line,'\\'))
+    {
+        result.push_back(line);
+    }
+    std::string res = result[result.size()-1].c_str();
+    std::cout << res << std::endl;
+    std::string finalPath = shotFolder + "\\" + res;
+    std::cout << finalPath << std::endl;
+
+    replaceReference(fPath, finalPath, refResult, ".");
+    return 0;
+}
+
 int copyFile(std::string fPath, std::string bkpRootFolder) {
     std::vector<std::string> result = {};
     std::stringstream  data(fPath);
@@ -126,6 +259,8 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
     {
         result.push_back(line);
     }
+
+    // WARNING PLEASE CHANGE HERE WITH ACTUAL FOLDER PATH
     std::string seq = result[5];
     std::string shot = result[6];
 
@@ -133,33 +268,38 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
     std::string shotFolder = seqFolder + "\\" + shot;
     std::string assFolder = shotFolder + "\\cache\\ass";
     std::string abcFolder = shotFolder + "\\cache\\alembic";
-    std::string exrFolder = shotFolder + "\\sourceimages";
+    std::string imgFolder = shotFolder + "\\sourceimages";
     std::string vdbFolder = shotFolder + "\\cache\\vdb";
 
     std::vector<std::string> sceneList = {};
     std::vector<std::string> assList = {};
     std::vector<std::string> abcList = {};
-    std::vector<std::string> exrList = {};
+    std::vector<std::string> imgList = {};
     std::vector<std::string> vdbList = {};
 
     std::vector<std::string> refResult = getReference(fPath);
 
     for(std::string i : refResult) {
-        std::filesystem::path fPath = i;
-        if (fPath.extension().string() == ".ocio") continue;
-        if (fPath.extension().string() == ".ass") {
-            assList = AppendToVector(assList, fPath.parent_path().string());
-        } else if (fPath.extension().string() == ".abc") {
-            abcList = AppendToVector(abcList, fPath.parent_path().string());
-        } else if (fPath.extension().string() == ".exr") {
-            exrList = AppendToVector(exrList, fPath.parent_path().string());
-        } else if (fPath.extension().string() == ".vdb") {
-            vdbList = AppendToVector(vdbList, fPath.parent_path().string());
+        std::filesystem::path rfPath = i;
+        if (rfPath.extension().string() == ".ocio") continue;
+        if (rfPath.extension().string() == ".ass") {
+            assList = AppendToVector(assList, rfPath.parent_path().string());
+        } else if (rfPath.extension().string() == ".abc") {
+            abcList = AppendToVector(abcList, rfPath.parent_path().string());
+        } else if (rfPath.extension().string() == ".exr" || rfPath.extension().string() == ".tif") {
+            imgList = AppendToVector(imgList, rfPath.parent_path().string());
+        } else if (rfPath.extension().string() == ".vdb") {
+            vdbList = AppendToVector(vdbList, rfPath.parent_path().string());
         } else {
-            sceneList = AppendToVector(sceneList, fPath.string());
+            sceneList = AppendToVector(sceneList, rfPath.string());
         }
         writeSourceFileToTxt(i, shotFolder);
     }
+
+    std::vector<std::string> originRefResult = getOriginReference(fPath);
+    writeRelativePathMa(originRefResult, fPath, shotFolder, fPath);
+
+    // return 0;
 
     for(std::string i : sceneList) {
         std::cout << i << std::endl;
@@ -173,9 +313,9 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
         std::cout << i << std::endl;
         CopyFileAndFolderCommand(i, abcFolder);
     }
-    for(std::string i : exrList) {
+    for(std::string i : imgList) {
         std::cout << i << std::endl;
-        CopyFileAndFolderCommand(i, exrFolder);
+        CopyFileAndFolderCommand(i, imgFolder);
     }
     for(std::string i : vdbList) {
         std::cout << i << std::endl;
@@ -206,12 +346,21 @@ int getFileVersion(std::string fPath) {
 int main(int argc, const char**argv) {
     std::string proj = "vd2";
     std::string rootPath = "J:\\"+proj+"\\work\\prod\\lig";
-    std::string bkpFolder = "\\\\isilon-nl\\archive\\packet\\vd2\\work\\prod\\lig2";
+    // // \\isilon-nl\archive\packet\vd2\work\prod\lig2
+    std::string bkpFolder = "\\\\isilon-nl\\archive\\packet\\vd2\\work\\prod\\lig";
+    // std::string bkpFolder = "\\\\isilon-nl\\archive\\packet\\vd2\\work\\prod\\lig2";
+    // // std::string bkpFolder = "\\\\10.95.20.193\\d$\\lig";
 
+    std::vector<std::string> seqList = {"ms025","s002","s009","s010","s011","s012","s013","s014","s015","s016","s019","s020",
+    "s025","s026","s026a"};
+    // std::vector<std::string> seqList = {"s026b","s026c","s026d","s026e","s028","s029","s030","s032","s034","s036","s039","s040",
+    // "s041","s052","s055"};
+    
     for (const auto& seq : fs::directory_iterator(rootPath)) {
         if (fs::is_directory(seq)) {
             const auto seqStr = seq.path().filename().string();
             if (seqStr == "CharacterTest") continue;
+            if(!(std::find(seqList.begin(), seqList.end(), seqStr) != seqList.end())) continue;
             for (const auto& shot : fs::directory_iterator(seq)) {
                 if (fs::is_directory(shot)) {
                     const auto shotStr = shot.path().filename().string();
