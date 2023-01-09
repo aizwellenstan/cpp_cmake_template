@@ -94,7 +94,7 @@ std::vector<std::string> getReference(std::string s) {
     std::ifstream file(s);
     if (file.is_open()) {
         std::string line;
-        while (std::getline(file, line)) {
+        while (std::getline(file, line, ';')) {
             if (line.find("J:") != std::string::npos) {
                 line = getPath(line);
                 if (line == "") continue;
@@ -124,7 +124,7 @@ std::vector<std::string> getOriginReference(std::string s) {
     std::ifstream file(s);
     if (file.is_open()) {
         std::string line;
-        while (std::getline(file, line)) {
+        while (std::getline(file, line, ';')) {
             if (line.find("J:") != std::string::npos) {
                 line = getOriginPath(line);
                 if (line == "") continue;
@@ -187,9 +187,10 @@ int replaceReference(std::string inPath, std::string outPath, std::vector<std::s
     std::vector<std::vector<std::string>> v;
     for(std::string i : refResult) {
         std::filesystem::path fPath = NormalizePath(i);
-        std::cout << i << std::endl;
+        std::cout <<"REF: " << i << std::endl;
         if (fPath.extension().string() == ".ocio") continue;
         if (fPath.extension().string() == ".ass") {
+            std::cout << fPath << std::endl;
             wordToReplace = i;
             fileName = getFileName(i);
             fileName = getAssName(fileName) + "/" + fileName;
@@ -222,6 +223,7 @@ int replaceReference(std::string inPath, std::string outPath, std::vector<std::s
                 for(int i=0;i<v.size();i++){
                     wordToReplace = v[i][0];
                     wordToReplaceWith = v[i][1];
+                    std::cout << line << " "<< wordToReplace << " " << wordToReplaceWith << std::endl;
                     line = ReplaceString(line, wordToReplace, wordToReplaceWith);
                 }
             }
@@ -296,8 +298,8 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
         writeSourceFileToTxt(i, shotFolder);
     }
 
-    std::vector<std::string> originRefResult = getOriginReference(fPath);
-    writeRelativePathMa(originRefResult, fPath, shotFolder, fPath);
+    // std::vector<std::string> originRefResult = getOriginReference(fPath);
+    // writeRelativePathMa(originRefResult, fPath, shotFolder, fPath);
 
     // return 0;
 
@@ -346,21 +348,22 @@ int getFileVersion(std::string fPath) {
 int main(int argc, const char**argv) {
     std::string proj = "vd2";
     std::string rootPath = "J:\\"+proj+"\\work\\prod\\lig";
-    // // \\isilon-nl\archive\packet\vd2\work\prod\lig2
+    // \\isilon-nl\archive\packet\vd2\work\prod\lig2
     std::string bkpFolder = "\\\\isilon-nl\\archive\\packet\\vd2\\work\\prod\\lig";
     // std::string bkpFolder = "\\\\isilon-nl\\archive\\packet\\vd2\\work\\prod\\lig2";
-    // // std::string bkpFolder = "\\\\10.95.20.193\\d$\\lig";
+    // std::string bkpFolder = "\\\\10.95.20.193\\d$\\lig";
 
-    std::vector<std::string> seqList = {"ms025","s002","s009","s010","s011","s012","s013","s014","s015","s016","s019","s020",
-    "s025","s026","s026a"};
+    // std::vector<std::string> seqList = {"ms025","s002","s009","s010","s011","s012","s013","s014","s015","s016","s019","s020",
+    // "s025","s026","s026a"};
     // std::vector<std::string> seqList = {"s026b","s026c","s026d","s026e","s028","s029","s030","s032","s034","s036","s039","s040",
     // "s041","s052","s055"};
-    
+    // std::vector<std::string> seqList = {"s056","s059","s062","s063","s064","s066","s067","s067a","s068","s069","s070","s998","s999"};
+    // std::vector<std::string> seqList = {"s026"};
     for (const auto& seq : fs::directory_iterator(rootPath)) {
         if (fs::is_directory(seq)) {
             const auto seqStr = seq.path().filename().string();
             if (seqStr == "CharacterTest") continue;
-            if(!(std::find(seqList.begin(), seqList.end(), seqStr) != seqList.end())) continue;
+            // if(!(std::find(seqList.begin(), seqList.end(), seqStr) != seqList.end())) continue;
             for (const auto& shot : fs::directory_iterator(seq)) {
                 if (fs::is_directory(shot)) {
                     const auto shotStr = shot.path().filename().string();
