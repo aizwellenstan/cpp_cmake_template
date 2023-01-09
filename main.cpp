@@ -45,7 +45,7 @@ int CreateFolderIfNotExist(std::string folder) {
 
 int CopyFileAndFolderCommand(std::string file, std::string destanation, bool copyRootFolder=false) {
     CreateFolderIfNotExist(destanation);
-    std::cout << destanation << std::endl;
+    // std::cout << destanation << std::endl;
     std::replace(file.begin(), file.end(), '/', '\\');
     std::ostringstream oss;
 
@@ -177,7 +177,6 @@ std::string ReplaceString(std::string line, std::string wordToReplace, std::stri
     size_t pos = line.find(wordToReplace);
     if (pos != std::string::npos)
         line.replace(pos, len, wordToReplaceWith);
-    std::cout << "ReplaceString: " << line << std::endl;
     return line;
 }
 
@@ -187,10 +186,8 @@ int replaceReference(std::string inPath, std::string outPath, std::vector<std::s
     std::vector<std::vector<std::string>> v;
     for(std::string i : refResult) {
         std::filesystem::path fPath = NormalizePath(i);
-        std::cout <<"REF: " << i << std::endl;
         if (fPath.extension().string() == ".ocio") continue;
         if (fPath.extension().string() == ".ass") {
-            std::cout << fPath << std::endl;
             wordToReplace = i;
             fileName = getFileName(i);
             fileName = getAssName(fileName) + "/" + fileName;
@@ -200,7 +197,7 @@ int replaceReference(std::string inPath, std::string outPath, std::vector<std::s
             wordToReplace = i;
             wordToReplace = regex_replace(wordToReplace, std::regex(getFileName(i)), "");
             wordToReplaceWith = "./cache/alembic/";
-        } else if (fPath.extension().string() == ".exr" || fPath.extension().string() == ".tif") {
+        } else if (fPath.extension().string() == ".exr" || fPath.extension().string() == ".tif" || fPath.extension().string() == ".jpg") {
             wordToReplace = i;
             wordToReplace = regex_replace(wordToReplace, std::regex(getFileName(i)), "");
             wordToReplaceWith = "./sourceimages/";
@@ -236,7 +233,7 @@ int replaceReference(std::string inPath, std::string outPath, std::vector<std::s
 
 int writeRelativePathMa(std::vector<std::string> refResult, std::string fPath, std::string shotFolder, std::string originalPath) {
     CreateFolderIfNotExist(shotFolder);
-    std::cout << fPath << std::endl;
+    // std::cout << fPath << std::endl;
     std::vector<std::string> result = {};
     std::stringstream  data(fPath);
     std::string line;
@@ -245,9 +242,9 @@ int writeRelativePathMa(std::vector<std::string> refResult, std::string fPath, s
         result.push_back(line);
     }
     std::string res = result[result.size()-1].c_str();
-    std::cout << res << std::endl;
+    // std::cout << res << std::endl;
     std::string finalPath = shotFolder + "\\" + res;
-    std::cout << finalPath << std::endl;
+    // std::cout << finalPath << std::endl;
 
     replaceReference(fPath, finalPath, refResult, ".");
     return 0;
@@ -263,8 +260,12 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
     }
 
     // WARNING PLEASE CHANGE HERE WITH ACTUAL FOLDER PATH
-    std::string seq = result[5];
-    std::string shot = result[6];
+    std::cout << result.size() << std::endl;
+    std::cout << result[result.size()-3] << std::endl;
+    // result.size()-1 vd2_ms025_010a_lig_v001.ma
+    // result.size()-2 scenes
+    std::string seq = result[result.size()-4];
+    std::string shot = result[result.size()-3];
 
     std::string seqFolder = bkpRootFolder + "\\" + seq;
     std::string shotFolder = seqFolder + "\\" + shot;
@@ -288,7 +289,7 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
             assList = AppendToVector(assList, rfPath.parent_path().string());
         } else if (rfPath.extension().string() == ".abc") {
             abcList = AppendToVector(abcList, rfPath.parent_path().string());
-        } else if (rfPath.extension().string() == ".exr" || rfPath.extension().string() == ".tif") {
+        } else if (rfPath.extension().string() == ".exr" || rfPath.extension().string() == ".tif" || rfPath.extension().string() == ".jpg") {
             imgList = AppendToVector(imgList, rfPath.parent_path().string());
         } else if (rfPath.extension().string() == ".vdb") {
             vdbList = AppendToVector(vdbList, rfPath.parent_path().string());
@@ -298,10 +299,10 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
         writeSourceFileToTxt(i, shotFolder);
     }
 
-    // std::vector<std::string> originRefResult = getOriginReference(fPath);
-    // writeRelativePathMa(originRefResult, fPath, shotFolder, fPath);
+    std::vector<std::string> originRefResult = getOriginReference(fPath);
+    writeRelativePathMa(originRefResult, fPath, shotFolder, fPath);
 
-    // return 0;
+    return 0;
 
     for(std::string i : sceneList) {
         std::cout << i << std::endl;
@@ -358,15 +359,17 @@ int main(int argc, const char**argv) {
     // std::vector<std::string> seqList = {"s026b","s026c","s026d","s026e","s028","s029","s030","s032","s034","s036","s039","s040",
     // "s041","s052","s055"};
     // std::vector<std::string> seqList = {"s056","s059","s062","s063","s064","s066","s067","s067a","s068","s069","s070","s998","s999"};
-    // std::vector<std::string> seqList = {"s026"};
+    std::vector<std::string> seqList = {"s014"};
+    std::vector<std::string> shotList = {"020"};
     for (const auto& seq : fs::directory_iterator(rootPath)) {
         if (fs::is_directory(seq)) {
             const auto seqStr = seq.path().filename().string();
             if (seqStr == "CharacterTest") continue;
-            // if(!(std::find(seqList.begin(), seqList.end(), seqStr) != seqList.end())) continue;
+            if(!(std::find(seqList.begin(), seqList.end(), seqStr) != seqList.end())) continue;
             for (const auto& shot : fs::directory_iterator(seq)) {
                 if (fs::is_directory(shot)) {
                     const auto shotStr = shot.path().filename().string();
+                    if(!(std::find(shotList.begin(), shotList.end(), shotStr) != shotList.end())) continue;
                     int latestVersion = 0;
                     std::string latestFilePath = "";
                     for (const auto& scene : fs::directory_iterator(shot.path().string()+"\\scenes")) {
