@@ -328,7 +328,7 @@ int main(int argc, const char**argv) {
     std::string seqListStr;
     std::string shotListStr;
 
-    std::ifstream fin("config.txt");
+    std::ifstream fin(".env");
     std::string line;
     std::istringstream sin;
 
@@ -359,11 +359,6 @@ int main(int argc, const char**argv) {
     std::cout << seqListStr << std::endl;
     std::cout << shotListStr << std::endl;
 
-    // how to read data
-    // int iw = lconf["image_width"].as<int>();
-    // std::string model = lconf["distortion_model"].as<std::string>();
-    // std::vector<double> distdata = lconf["distortion_coefficients"]["data"].as<std::vector<double>>();
-    
     // std::string proj = "vd2";
     // std::string projPath = "J:\\"+proj+"\\work\\prod\\lig";
     // \\isilon-nl\archive\packet\vd2\work\prod\lig2
@@ -377,7 +372,6 @@ int main(int argc, const char**argv) {
     // std::vector<std::string> seqList = {"s026b","s026c","s026d","s026e","s028","s029","s030","s032","s034","s036","s039","s040",
     // "s041","s052","s055"};
     // std::vector<std::string> seqList = {"s056","s059","s062","s063","s064","s066","s067","s067a","s068","s069","s070","s998","s999"};
-    // std::vector<std::string> seqList = {"s016"};
     // std::vector<std::string> shotList = {"010","020"};
 
     std::vector<std::string> seqList = WordToVector(seqListStr);
