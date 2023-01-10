@@ -45,29 +45,25 @@ int CreateFolderIfNotExist(std::string folder) {
 
 int CopyFileAndFolderCommand(std::string file, std::string destanation, bool copyRootFolder=false) {
     CreateFolderIfNotExist(destanation);
-    // std::cout << destanation << std::endl;
     std::replace(file.begin(), file.end(), '/', '\\');
     std::ostringstream oss;
-
     std::string folderName = "";
     if (copyRootFolder) {
         std::vector<std::string> result = {};
         std::stringstream  data(file);
         std::string line;
         while(std::getline(data,line,'\\'))
-        {
             result.push_back(line);
-        }
         folderName = result[result.size()-1].c_str();
     }
     
     if (fs::is_directory(file)) {
         if (!copyRootFolder)
-            oss << "xcopy " <<"\""<< file << "\"" << " " << destanation << "\\" <<"*" << " /Y /I /S /J"; // prevent space in source path
+            oss << "xcopy " <<"\""<< file << "\"" << " " << destanation << "\\" <<"*" << " /Y /I /S /J /A"; // prevent space in source path
         else
-            oss << "xcopy " <<"\""<< file << "\"" << " " << destanation <<  "\\" << folderName << "\\" <<"*" << " /Y /I /S /J"; // prevent space in source path
+            oss << "xcopy " <<"\""<< file << "\"" << " " << destanation <<  "\\" << folderName << "\\" <<"*" << " /Y /I /S /J /A"; // prevent space in source path
     } else {
-        oss << "xcopy " <<"\""<< file  << "\"" << " " << destanation << " /Y"; // prevent space in source path
+        oss << "xcopy " <<"\""<< file  << "\"" << " " << destanation << "*" << " /Y /A"; // prevent space in source path
     } // is file
     std::string command = oss.str();
     std::cout << command << std::endl;
@@ -80,9 +76,7 @@ std::string getPath(std::string s) {
     std::stringstream  data(s);
     std::string line;
     while(std::getline(data,line,' '))
-    {
         result.push_back(line);
-    }
     s = result[result.size()-1];
     s.erase(remove(s.begin(), s.end(), '\"'),s.end()); // remove double quotes
     s = NormalizePath(s);
@@ -111,9 +105,7 @@ std::string getOriginPath(std::string s) {
     std::stringstream  data(s);
     std::string line;
     while(std::getline(data,line,' '))
-    {
         result.push_back(line);
-    }
     s = result[result.size()-1];
     s.erase(remove(s.begin(), s.end(), '\"'),s.end()); // remove double quotes
     return s;
@@ -153,9 +145,7 @@ std::string getFileName(std::string s) {
     std::stringstream  data(s);
     std::string line;
     while(std::getline(data,line,'/'))
-    {
         result.push_back(line);
-    }
     s = result[result.size()-1];
     return s;
 }
@@ -165,9 +155,7 @@ std::string getAssName(std::string s) {
     std::stringstream  data(s);
     std::string line;
     while(std::getline(data,line,'.'))
-    {
         result.push_back(line);
-    }
     s = result[0];
     return s;
 }
@@ -233,19 +221,13 @@ int replaceReference(std::string inPath, std::string outPath, std::vector<std::s
 
 int writeRelativePathMa(std::vector<std::string> refResult, std::string fPath, std::string shotFolder, std::string originalPath) {
     CreateFolderIfNotExist(shotFolder);
-    // std::cout << fPath << std::endl;
     std::vector<std::string> result = {};
     std::stringstream  data(fPath);
     std::string line;
     while(std::getline(data,line,'\\'))
-    {
         result.push_back(line);
-    }
     std::string res = result[result.size()-1].c_str();
-    // std::cout << res << std::endl;
     std::string finalPath = shotFolder + "\\" + res;
-    // std::cout << finalPath << std::endl;
-
     replaceReference(fPath, finalPath, refResult, ".");
     return 0;
 }
@@ -255,13 +237,9 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
     std::stringstream  data(fPath);
     std::string line;
     while(std::getline(data,line,'\\'))
-    {
         result.push_back(line);
-    }
 
     // WARNING PLEASE CHANGE HERE WITH ACTUAL FOLDER PATH
-    std::cout << result.size() << std::endl;
-    std::cout << result[result.size()-3] << std::endl;
     // result.size()-1 vd2_ms025_010a_lig_v001.ma
     // result.size()-2 scenes
     std::string seq = result[result.size()-4];
@@ -290,7 +268,7 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
         } else if (rfPath.extension().string() == ".abc") {
             abcList = AppendToVector(abcList, rfPath.parent_path().string());
         } else if (rfPath.extension().string() == ".exr" || rfPath.extension().string() == ".tif" || rfPath.extension().string() == ".jpg") {
-            imgList = AppendToVector(imgList, rfPath.parent_path().string());
+            imgList = AppendToVector(imgList, rfPath.string());
         } else if (rfPath.extension().string() == ".vdb") {
             vdbList = AppendToVector(vdbList, rfPath.parent_path().string());
         } else {
@@ -302,28 +280,18 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
     std::vector<std::string> originRefResult = getOriginReference(fPath);
     writeRelativePathMa(originRefResult, fPath, shotFolder, fPath);
 
-    return 0;
+    // return 0;
 
-    for(std::string i : sceneList) {
-        std::cout << i << std::endl;
+    for(std::string i : sceneList)
         CopyFileAndFolderCommand(i, shotFolder);
-    }
-    for(std::string i : assList) {
-        std::cout << i << std::endl;
+    for(std::string i : assList)
         CopyFileAndFolderCommand(i, assFolder, true);
-    }
-    for(std::string i : abcList) {
-        std::cout << i << std::endl;
+    for(std::string i : abcList)
         CopyFileAndFolderCommand(i, abcFolder);
-    }
-    for(std::string i : imgList) {
-        std::cout << i << std::endl;
+    for(std::string i : imgList)
         CopyFileAndFolderCommand(i, imgFolder);
-    }
-    for(std::string i : vdbList) {
-        std::cout << i << std::endl;
+    for(std::string i : vdbList)
         CopyFileAndFolderCommand(i, vdbFolder);
-    }
     return 0;
 }
 
@@ -333,10 +301,7 @@ int getFileVersion(std::string fPath) {
     std::stringstream  data(fPath);
     std::string line;
     while(std::getline(data,line,'_'))
-    {
-        result.push_back(line); // Note: You may get a couple of blank lines
-                                // When multiple underscores are beside each other.
-    }
+        result.push_back(line);
     std::string res = result[result.size()-1].c_str();
     std::regex str_expr ("v([0-9])([0-9])([0-9])");
     if (regex_match (res,str_expr)) {
@@ -346,12 +311,65 @@ int getFileVersion(std::string fPath) {
     } else return -1;
 }
 
+std::vector<std::string> WordToVector(std::string s) {
+    std::string tmp; 
+    std::stringstream ss(s);
+    std::vector<std::string> words;
+
+    while(getline(ss, tmp, ',')){
+        words.push_back(tmp);
+    }
+    return words;
+}
+
 int main(int argc, const char**argv) {
-    std::string proj = "vd2";
-    std::string rootPath = "J:\\"+proj+"\\work\\prod\\lig";
+    std::string projPath;
+    std::string bkpFolder;
+    std::string seqListStr;
+    std::string shotListStr;
+
+    std::ifstream fin("config.txt");
+    std::string line;
+    std::istringstream sin;
+
+    while (std::getline(fin, line)) {
+        sin.str(line.substr(line.find("=")+1));
+        if (line.find("projPath") != std::string::npos) {
+            sin >> projPath;
+        }
+        sin.clear();
+
+        if (line.find("bkpFolder") != std::string::npos) {
+            sin >> bkpFolder;
+        }
+
+        if (line.find("seqList") != std::string::npos) {
+            sin >> seqListStr;
+        }
+
+        if (line.find("shotList") != std::string::npos) {
+            sin >> shotListStr;
+        }
+        sin.clear();
+    }
+    fin.close();
+
+    std::cout << projPath << std::endl;
+    std::cout << bkpFolder << std::endl;
+    std::cout << seqListStr << std::endl;
+    std::cout << shotListStr << std::endl;
+
+    // how to read data
+    // int iw = lconf["image_width"].as<int>();
+    // std::string model = lconf["distortion_model"].as<std::string>();
+    // std::vector<double> distdata = lconf["distortion_coefficients"]["data"].as<std::vector<double>>();
+    
+    // std::string proj = "vd2";
+    // std::string projPath = "J:\\"+proj+"\\work\\prod\\lig";
     // \\isilon-nl\archive\packet\vd2\work\prod\lig2
-    std::string bkpFolder = "\\\\isilon-nl\\archive\\packet\\vd2\\work\\prod\\lig";
+    // std::string bkpFolder = "\\\\isilon-nl\\archive\\packet\\vd2\\work\\prod\\lig";
     // std::string bkpFolder = "\\\\isilon-nl\\archive\\packet\\vd2\\work\\prod\\lig2";
+    // \\10.95.20.193\d$\lig
     // std::string bkpFolder = "\\\\10.95.20.193\\d$\\lig";
 
     // std::vector<std::string> seqList = {"ms025","s002","s009","s010","s011","s012","s013","s014","s015","s016","s019","s020",
@@ -359,26 +377,35 @@ int main(int argc, const char**argv) {
     // std::vector<std::string> seqList = {"s026b","s026c","s026d","s026e","s028","s029","s030","s032","s034","s036","s039","s040",
     // "s041","s052","s055"};
     // std::vector<std::string> seqList = {"s056","s059","s062","s063","s064","s066","s067","s067a","s068","s069","s070","s998","s999"};
-    std::vector<std::string> seqList = {"s014"};
-    std::vector<std::string> shotList = {"020"};
-    for (const auto& seq : fs::directory_iterator(rootPath)) {
+    // std::vector<std::string> seqList = {"s016"};
+    // std::vector<std::string> shotList = {"010","020"};
+
+    std::vector<std::string> seqList = WordToVector(seqListStr);
+    std::vector<std::string> shotList = WordToVector(shotListStr);
+
+    for(std::string i : seqList)
+        std::cout << i << std::endl;
+
+    for(std::string i : shotList)
+        std::cout << i << std::endl;
+
+    for (const auto& seq : fs::directory_iterator(projPath)) {
         if (fs::is_directory(seq)) {
             const auto seqStr = seq.path().filename().string();
             if (seqStr == "CharacterTest") continue;
-            if(!(std::find(seqList.begin(), seqList.end(), seqStr) != seqList.end())) continue;
+            if (seqList.size() > 0)
+                if (!(std::find(seqList.begin(), seqList.end(), seqStr) != seqList.end())) continue;
             for (const auto& shot : fs::directory_iterator(seq)) {
                 if (fs::is_directory(shot)) {
                     const auto shotStr = shot.path().filename().string();
-                    if(!(std::find(shotList.begin(), shotList.end(), shotStr) != shotList.end())) continue;
+                    if (shotList.size() > 0)
+                        if (!(std::find(shotList.begin(), shotList.end(), shotStr) != shotList.end())) continue;
                     int latestVersion = 0;
                     std::string latestFilePath = "";
                     for (const auto& scene : fs::directory_iterator(shot.path().string()+"\\scenes")) {
                         if (fs::is_regular_file(scene)) {
                             if (scene.path().extension().string() != ".ma") continue;
                             const auto sceneStr = scene.path().filename().string();
-                            // std::cout << "seq:  " << seqStr << '\n';
-                            // std::cout << "shot:  " << shotStr << '\n';
-                            // std::cout << "scene:  " << sceneStr << '\n';
                             std::string fPath = scene.path().filename().string();
                             size_t lastindex = fPath.find_last_of(".");
                             std::string rawname = fPath.substr(0, lastindex);
@@ -390,9 +417,8 @@ int main(int argc, const char**argv) {
                         }
                     }
                     
-                    if (latestFilePath != "") {
+                    if (latestFilePath != "")
                         copyFile(latestFilePath, bkpFolder);
-                    }
                 }
             }
         }
