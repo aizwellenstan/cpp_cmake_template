@@ -1,5 +1,8 @@
 # HOW IT WORKS
 
+### Setting File
+`.env`
+
 ### structure example
 - J:\prj\work\prod\lig\s069\220\scenes\vd2_s069_220_lig_v000.ma
 
@@ -10,7 +13,7 @@ and copy the
 .ma
 .ass
 .abc
-.exr
+.exr .tif .jpg
 .vdo
 into new directory
 ```
