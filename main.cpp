@@ -63,7 +63,7 @@ int CopyFileAndFolderCommand(std::string file, std::string destanation, bool cop
         else
             oss << "xcopy " <<"\""<< file << "\"" << " " << destanation <<  "\\" << folderName << "\\" <<"*" << " /Y /I /S /J /A"; // prevent space in source path
     } else {
-        oss << "xcopy " <<"\""<< file  << "\"" << " " << destanation << "*" << " /Y /A"; // prevent space in source path
+        oss << "xcopy " <<"\""<< file  << "\"" << " " << destanation << "\\" << "*" << " /Y /A"; // prevent space in source path
     } // is file
     std::string command = oss.str();
     std::cout << command << std::endl;

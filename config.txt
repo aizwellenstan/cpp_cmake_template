@@ -1,6 +1,6 @@
 //config.txt
 projPath = J:\vd2\work\prod\lig
-bkpFolder = \\isilon-nl\archive\packet\vd2\work\prod\lig2
+bkpFolder = \\isilon-nl\archive\packet\vd2\work\prod\lig
 
 // if all stay empty
 seqList = 
