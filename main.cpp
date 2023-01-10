@@ -1,5 +1,5 @@
+#include "vector.h"
 #include <iostream>
-// #include "adder.h"
 #include <string>
 
 //file
@@ -23,13 +23,6 @@ std::string NormalizePath(const std::string& messyPath) {
     std::filesystem::path canonicalPath = std::filesystem::weakly_canonical(path);
     std::string npath = canonicalPath.make_preferred().string();
     return npath;
-}
-
-std::vector<std::string> AppendToVector(std::vector<std::string> v, std::string x) {
-    if(!(std::find(v.begin(), v.end(), x) != v.end())) {
-        v.push_back(x);
-    }
-    return v;
 }
 
 int CreateFolderIfNotExist(std::string folder) {

@@ -4,13 +4,11 @@ project(CMAKE)
 
 add_executable(${PROJECT_NAME} main.cpp)
 
-add_subdirectory(Adder)
+add_subdirectory(modules)
 
-target_include_directories(${PROJECT_NAME} PRIVATE Adder)
+target_include_directories(${PROJECT_NAME} PRIVATE modules)
 
-target_link_directories(${PROJECT_NAME} PRIVATE Adder)
-
-target_link_libraries(${PROJECT_NAME} adder)
+target_link_libraries(${PROJECT_NAME} vector)
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
