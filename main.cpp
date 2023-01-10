@@ -1,19 +1,11 @@
 #include "vector.h"
 #include <iostream>
-#include <string>
 
 //file
 #include <filesystem>
 using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
-#include <sstream>
-
-#include <windows.h>
-#include <shlobj.h>
 #include <fstream>
-#include <cstdlib>
 #include <regex>
-#include <algorithm>
-
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING 1;
 #include <experimental/filesystem> // or #include <filesystem> for C++17 and up
 namespace fs = std::experimental::filesystem;
@@ -302,17 +294,6 @@ int getFileVersion(std::string fPath) {
         int ver = atoi(res.c_str());
         return ver;
     } else return -1;
-}
-
-std::vector<std::string> WordToVector(std::string s) {
-    std::string tmp; 
-    std::stringstream ss(s);
-    std::vector<std::string> words;
-
-    while(getline(ss, tmp, ',')){
-        words.push_back(tmp);
-    }
-    return words;
 }
 
 int main(int argc, const char**argv) {
