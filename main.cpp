@@ -22,7 +22,7 @@ int CreateFolderIfNotExist(std::string folder) {
         std::ostringstream oss;
         oss << "mkdir " + folder; // prevent space in source path
         std::string command = oss.str();
-        std::cout << command << std::endl;
+        // std::cout << command << std::endl;
         system(command.c_str());
     }
     return 0;
@@ -51,7 +51,7 @@ int CopyFileAndFolderCommand(std::string file, std::string destanation, bool cop
         oss << "xcopy " <<"\""<< file  << "\"" << " " << destanation << "\\" << "*" << " /Y /A"; // prevent space in source path
     } // is file
     std::string command = oss.str();
-    std::cout << command << std::endl;
+    // std::cout << command << std::endl;
     system(command.c_str());
     return 0;
 }
@@ -68,22 +68,22 @@ std::string getPath(std::string s) {
     return s;
 }
 
-std::vector<std::string> getReference(std::string s) {
-    std::vector<std::string> result = {};
-    std::ifstream file(s);
-    if (file.is_open()) {
-        std::string line;
-        while (std::getline(file, line, ';')) {
-            if (line.find("J:") != std::string::npos) {
-                line = getPath(line);
-                if (line == "") continue;
-                result.push_back(line);
-            }  
-        }
-        file.close();
-    }
-    return result;
-}
+// std::vector<std::string> getReference(std::string s) {
+//     std::vector<std::string> result = {};
+//     std::ifstream file(s);
+//     if (file.is_open()) {
+//         std::string line;
+//         while (std::getline(file, line, ';')) {
+//             if (line.find("J:") != std::string::npos) {
+//                 line = getPath(line);
+//                 if (line == "") continue;
+//                 result.push_back(line);
+//             }  
+//         }
+//         file.close();
+//     }
+//     return result;
+// }
 
 std::string getOriginPath(std::string s) {
     std::vector<std::string> result = {};
@@ -96,21 +96,41 @@ std::string getOriginPath(std::string s) {
     return s;
 }
 
-std::vector<std::string> getOriginReference(std::string s) {
-    std::vector<std::string> result = {};
+std::string getRenderLayer(std::string s) {
+    // createNode renderLayer -n "defaultRenderLayer";
+    s = s.substr(27,-2);
+    return s;
+}
+
+std::tuple<std::vector<std::string>, std::vector<std::string>, std::vector<std::string>> readFile(std::string s) {
+    std::vector<std::string> refFiles = {};
+    std::vector<std::string> onRenderLayers = {};
+    std::vector<std::string> offRenderLayers = {};
+
     std::ifstream file(s);
     if (file.is_open()) {
         std::string line;
+        std::string lastRenderLayer = "";
         while (std::getline(file, line, ';')) {
             if (line.find("J:") != std::string::npos) {
                 line = getOriginPath(line);
                 if (line == "") continue;
-                result.push_back(line);
-            }  
+                refFiles.push_back(line);
+            }
+            if (line.find("renderLayer -n") != std::string::npos) {
+                if (lastRenderLayer.length() > 0)
+                    onRenderLayers.push_back(lastRenderLayer);
+                lastRenderLayer = getRenderLayer(line);
+            }
+
+            if (line.find(".rndr") != std::string::npos) {
+                offRenderLayers.push_back(lastRenderLayer);
+                lastRenderLayer = "";
+            }
         }
         file.close();
     }
-    return result;
+    return std::make_tuple(refFiles, onRenderLayers, offRenderLayers);
 }
 
 int writeSourceFileToTxt(std::string fPath, std::string shotFolder) {
@@ -119,6 +139,32 @@ int writeSourceFileToTxt(std::string fPath, std::string shotFolder) {
     if (myfile.is_open())
     {
         myfile << fPath+"\n";
+        myfile.close();
+    }
+    else std::cout << "Unable to open file";
+    return 0;
+}
+
+int writeIrregularTxt(std::string fPath, std::string folder) {
+    CreateFolderIfNotExist(folder);
+    std::ofstream myfile (folder+"\\Irregular.txt", std::ios_base::app);
+    if (myfile.is_open())
+    {
+        myfile << fPath+"\n";
+        myfile.close();
+    }
+    else std::cout << "Unable to open file";
+    return 0;
+}
+
+int writeRenderLayersTxt(std::vector<std::string> onRenderLayers, std::string shotFolder, std::string condition) {
+    CreateFolderIfNotExist(shotFolder);
+    std::ofstream myfile (shotFolder+"\\RenderLayers.txt", std::ios_base::app);
+    if (myfile.is_open())
+    {
+        myfile << condition+"\n";
+        for(std::string i : onRenderLayers)
+            myfile << i+"\n";
         myfile.close();
     }
     else std::cout << "Unable to open file";
@@ -178,9 +224,12 @@ int replaceReference(std::string inPath, std::string outPath, std::vector<std::s
             wordToReplace = i;
             wordToReplace = regex_replace(wordToReplace, std::regex(getFileName(i)), "");
             wordToReplaceWith = "./cache/vdb/";
+        } else if (fPath.extension().string() == ".mb" || fPath.extension().string() == ".ma") {
+            wordToReplace = i;
+            wordToReplace = "J:/vd2/proj/vd2";
+            wordToReplaceWith = "${QB_PROJ_ROOT}/${QB_PROJ}";
         }
         if(wordToReplace == "") continue;
-
         v.push_back({wordToReplace, wordToReplaceWith});
     }
     std::ifstream in(inPath);
@@ -193,7 +242,6 @@ int replaceReference(std::string inPath, std::string outPath, std::vector<std::s
                 for(int i=0;i<v.size();i++){
                     wordToReplace = v[i][0];
                     wordToReplaceWith = v[i][1];
-                    std::cout << line << " "<< wordToReplace << " " << wordToReplaceWith << std::endl;
                     line = ReplaceString(line, wordToReplace, wordToReplaceWith);
                 }
             }
@@ -217,7 +265,18 @@ int writeRelativePathMa(std::vector<std::string> refResult, std::string fPath, s
     return 0;
 }
 
-int copyFile(std::string fPath, std::string bkpRootFolder) {
+bool checkIrregular(std::string fPath) {
+    fPath = NormalizePath(fPath);
+    std::string referencPath = "\\\\nma-tomotoonsrv\\Tomotoon\\vd2\\proj\\vd2";
+    size_t pos = fPath.find(referencPath);
+    if (pos != std::string::npos) {
+        return false;
+    }
+    std::cout << "Irregular: " << fPath << std::endl;
+    return true;
+}
+
+int copyFile(std::string fPath, std::string bkpRootFolder, std::vector<std::string> extList) {
     std::vector<std::string> result = {};
     std::stringstream  data(fPath);
     std::string line;
@@ -243,39 +302,56 @@ int copyFile(std::string fPath, std::string bkpRootFolder) {
     std::vector<std::string> imgList = {};
     std::vector<std::string> vdbList = {};
 
-    std::vector<std::string> refResult = getReference(fPath);
+    // Read Ma File
+    std::vector<std::string> refResult = {};
+    std::vector<std::string> onRenderLayers = {};
+    std::vector<std::string> offRenderLayers = {};
+    tie(refResult, onRenderLayers, offRenderLayers) = readFile(fPath);
+    writeRenderLayersTxt(onRenderLayers, shotFolder, "On");
+    writeRenderLayersTxt(offRenderLayers, shotFolder, "Off");
+    writeRelativePathMa(refResult, fPath, shotFolder, fPath);
 
+    std::vector<std::string> knownList = {".ocio", ".ma", ".mb", ".ass", ".abc", ".exr", ".tif", ".jpg", ".vdb"};
     for(std::string i : refResult) {
         std::filesystem::path rfPath = i;
+
+        // check if in known ext
+        if (std::count(knownList.begin(), knownList.end(), rfPath.extension().string()))
+            // skip if not in setting's extlist
+            if (!(std::count(extList.begin(), extList.end(), rfPath.extension().string()))) continue;
+        else
+            // unknown ext
+            writeIrregularTxt("Unknown Ext: \n"+fPath+" "+rfPath.string(),bkpRootFolder);
+        
         if (rfPath.extension().string() == ".ocio") continue;
-        if (rfPath.extension().string() == ".ass") {
+        if (rfPath.extension().string() == ".ass")
             assList = AppendToVector(assList, rfPath.parent_path().string());
-        } else if (rfPath.extension().string() == ".abc") {
+        else if (rfPath.extension().string() == ".abc")
             abcList = AppendToVector(abcList, rfPath.parent_path().string());
-        } else if (rfPath.extension().string() == ".exr" || rfPath.extension().string() == ".tif" || rfPath.extension().string() == ".jpg") {
+        else if (rfPath.extension().string() == ".exr" || rfPath.extension().string() == ".tif" || rfPath.extension().string() == ".jpg")
             imgList = AppendToVector(imgList, rfPath.string());
-        } else if (rfPath.extension().string() == ".vdb") {
+        else if (rfPath.extension().string() == ".vdb")
             vdbList = AppendToVector(vdbList, rfPath.parent_path().string());
-        } else {
-            sceneList = AppendToVector(sceneList, rfPath.string());
+
+        if (checkIrregular(rfPath.string())) {
+            // check if in known ext
+            if (!(std::count(knownList.begin(), knownList.end(), rfPath.extension().string())))
+                sceneList = AppendToVector(sceneList, rfPath.string());
+            std::cout <<"Find Irregular " <<rfPath.string() << std::endl;
+            writeIrregularTxt("Ref : \n"+fPath+" "+rfPath.string(),bkpRootFolder);
         }
-        writeSourceFileToTxt(i, shotFolder);
     }
 
-    std::vector<std::string> originRefResult = getOriginReference(fPath);
-    writeRelativePathMa(originRefResult, fPath, shotFolder, fPath);
-
     // return 0;
-
-    for(std::string i : sceneList)
+    for (std::string i : sceneList)
         CopyFileAndFolderCommand(i, shotFolder);
-    for(std::string i : assList)
+    for (std::string i : assList)
         CopyFileAndFolderCommand(i, assFolder, true);
-    for(std::string i : abcList)
+    for (std::string i : abcList)
         CopyFileAndFolderCommand(i, abcFolder);
-    for(std::string i : imgList)
+    for (std::string i : imgList)
         CopyFileAndFolderCommand(i, imgFolder);
-    for(std::string i : vdbList)
+    for (std::string i : vdbList)
         CopyFileAndFolderCommand(i, vdbFolder);
     return 0;
 }
@@ -301,6 +377,7 @@ int main(int argc, const char**argv) {
     std::string bkpFolder;
     std::string seqListStr;
     std::string shotListStr;
+    std::string extListStr;
 
     std::ifstream fin(".env");
     std::string line;
@@ -308,22 +385,21 @@ int main(int argc, const char**argv) {
 
     while (std::getline(fin, line)) {
         sin.str(line.substr(line.find("=")+1));
-        if (line.find("projPath") != std::string::npos) {
+        if (line.find("projPath") != std::string::npos)
             sin >> projPath;
-        }
         sin.clear();
 
-        if (line.find("bkpFolder") != std::string::npos) {
+        if (line.find("bkpFolder") != std::string::npos)
             sin >> bkpFolder;
-        }
 
-        if (line.find("seqList") != std::string::npos) {
+        if (line.find("seqList") != std::string::npos)
             sin >> seqListStr;
-        }
 
-        if (line.find("shotList") != std::string::npos) {
+        if (line.find("shotList") != std::string::npos)
             sin >> shotListStr;
-        }
+
+        if (line.find("extList") != std::string::npos)
+            sin >> extListStr;
         sin.clear();
     }
     fin.close();
@@ -332,6 +408,7 @@ int main(int argc, const char**argv) {
     std::cout << bkpFolder << std::endl;
     std::cout << seqListStr << std::endl;
     std::cout << shotListStr << std::endl;
+    std::cout << extListStr << std::endl;
 
     // std::string proj = "vd2";
     // std::string projPath = "J:\\"+proj+"\\work\\prod\\lig";
@@ -350,12 +427,13 @@ int main(int argc, const char**argv) {
 
     std::vector<std::string> seqList = WordToVector(seqListStr);
     std::vector<std::string> shotList = WordToVector(shotListStr);
+    std::vector<std::string> extList = WordToVector(extListStr);
 
-    for(std::string i : seqList)
-        std::cout << i << std::endl;
+    // for(std::string i : seqList)
+    //     std::cout << i << std::endl;
 
-    for(std::string i : shotList)
-        std::cout << i << std::endl;
+    // for(std::string i : shotList)
+    //     std::cout << i << std::endl;
 
     for (const auto& seq : fs::directory_iterator(projPath)) {
         if (fs::is_directory(seq)) {
@@ -386,10 +464,13 @@ int main(int argc, const char**argv) {
                     }
                     
                     if (latestFilePath != "")
-                        copyFile(latestFilePath, bkpFolder);
+                        copyFile(latestFilePath, bkpFolder, extList);
                 }
             }
         }
     }
+    std::cout<<"FINISHED"<<std::endl;
+    std::cout<<"Irregular File At "<<bkpFolder<<"/Irregular.txt"<<std::endl;
+    std::getline(std::cin, line); //PAUSE
     return 0;
 }
