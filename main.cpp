@@ -128,6 +128,8 @@ std::tuple<std::vector<std::string>, std::vector<std::string>, std::vector<std::
                 lastRenderLayer = "";
             }
         }
+        if (lastRenderLayer.length() > 0)
+            onRenderLayers.push_back(lastRenderLayer);
         file.close();
     }
     return std::make_tuple(refFiles, onRenderLayers, offRenderLayers);
