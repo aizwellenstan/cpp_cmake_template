@@ -341,7 +341,7 @@ int copyFile(std::string fPath, std::string bkpRootFolder, std::vector<std::stri
         if (rfPath.extension().string() == ".ass") {
             assList = AppendToVector(assList, rfPath.parent_path().string());
         } else if (rfPath.extension().string() == ".abc") {
-            abcList = AppendToVector(abcList, rfPath.parent_path().string());
+            abcList = AppendToVector(abcList, rfPath.string());
         } else if (rfPath.extension().string() == ".exr" || rfPath.extension().string() == ".tif" || rfPath.extension().string() == ".jpg") {
             imgList = AppendToVector(imgList, rfPath.string());
         } else if (rfPath.extension().string() == ".vdb") {
