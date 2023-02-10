@@ -136,6 +136,7 @@ std::tuple<std::vector<std::string>, std::vector<std::string>, std::vector<std::
 int writeSourceFileToTxt(std::string fPath, std::string shotFolder) {
     CreateFolderIfNotExist(shotFolder);
     std::ofstream myfile (shotFolder+"\\filePath.txt", std::ios_base::app);
+    // ios::trunc
     if (myfile.is_open())
     {
         myfile << fPath+"\n";
@@ -157,13 +158,21 @@ int writeIrregularTxt(std::string fPath, std::string folder) {
     return 0;
 }
 
-int writeRenderLayersTxt(std::vector<std::string> onRenderLayers, std::string shotFolder, std::string condition) {
+int writeRenderLayersTxt(
+    std::vector<std::string> onRenderLayers, 
+    std::vector<std::string> offRenderLayers, 
+    std::string shotFolder
+) {
     CreateFolderIfNotExist(shotFolder);
-    std::ofstream myfile (shotFolder+"\\RenderLayers.txt", std::ios_base::app);
+    // std::ofstream myfile (shotFolder+"\\RenderLayers.txt", std::ios_base::app);
+    std::ofstream myfile (shotFolder+"\\RenderLayers.txt", std::ios_base::trunc);
     if (myfile.is_open())
     {
-        myfile << condition+"\n";
+        myfile << "On\n";
         for(std::string i : onRenderLayers)
+            myfile << i+"\n";
+        myfile << "Off\n";
+        for(std::string i : offRenderLayers)
             myfile << i+"\n";
         myfile.close();
     }
@@ -230,6 +239,7 @@ int replaceReference(std::string inPath, std::string outPath, std::vector<std::s
             wordToReplaceWith = "${QB_PROJ_ROOT}/${QB_PROJ}";
         }
         if(wordToReplace == "") continue;
+
         v.push_back({wordToReplace, wordToReplaceWith});
     }
     std::ifstream in(inPath);
@@ -242,6 +252,7 @@ int replaceReference(std::string inPath, std::string outPath, std::vector<std::s
                 for(int i=0;i<v.size();i++){
                     wordToReplace = v[i][0];
                     wordToReplaceWith = v[i][1];
+                    // std::cout << line << " "<< wordToReplace << " " << wordToReplaceWith << std::endl;
                     line = ReplaceString(line, wordToReplace, wordToReplaceWith);
                 }
             }
@@ -307,42 +318,48 @@ int copyFile(std::string fPath, std::string bkpRootFolder, std::vector<std::stri
     std::vector<std::string> onRenderLayers = {};
     std::vector<std::string> offRenderLayers = {};
     tie(refResult, onRenderLayers, offRenderLayers) = readFile(fPath);
-    writeRenderLayersTxt(onRenderLayers, shotFolder, "On");
-    writeRenderLayersTxt(offRenderLayers, shotFolder, "Off");
+    writeRenderLayersTxt(onRenderLayers, offRenderLayers, shotFolder);
     writeRelativePathMa(refResult, fPath, shotFolder, fPath);
 
     std::vector<std::string> knownList = {".ocio", ".ma", ".mb", ".ass", ".abc", ".exr", ".tif", ".jpg", ".vdb"};
     for(std::string i : refResult) {
+
+        std::cout << "Ref " << i << std::endl;
         std::filesystem::path rfPath = i;
 
         // check if in known ext
         if (std::count(knownList.begin(), knownList.end(), rfPath.extension().string()))
+        {
             // skip if not in setting's extlist
             if (!(std::count(extList.begin(), extList.end(), rfPath.extension().string()))) continue;
-        else
+        } else {
             // unknown ext
             writeIrregularTxt("Unknown Ext: \n"+fPath+" "+rfPath.string(),bkpRootFolder);
+        }
         
         if (rfPath.extension().string() == ".ocio") continue;
-        if (rfPath.extension().string() == ".ass")
+        if (rfPath.extension().string() == ".ass") {
             assList = AppendToVector(assList, rfPath.parent_path().string());
-        else if (rfPath.extension().string() == ".abc")
+        } else if (rfPath.extension().string() == ".abc") {
             abcList = AppendToVector(abcList, rfPath.parent_path().string());
-        else if (rfPath.extension().string() == ".exr" || rfPath.extension().string() == ".tif" || rfPath.extension().string() == ".jpg")
+        } else if (rfPath.extension().string() == ".exr" || rfPath.extension().string() == ".tif" || rfPath.extension().string() == ".jpg") {
             imgList = AppendToVector(imgList, rfPath.string());
-        else if (rfPath.extension().string() == ".vdb")
+        } else if (rfPath.extension().string() == ".vdb") {
             vdbList = AppendToVector(vdbList, rfPath.parent_path().string());
+        }
 
         if (checkIrregular(rfPath.string())) {
             // check if in known ext
             if (!(std::count(knownList.begin(), knownList.end(), rfPath.extension().string())))
                 sceneList = AppendToVector(sceneList, rfPath.string());
+
             std::cout <<"Find Irregular " <<rfPath.string() << std::endl;
             writeIrregularTxt("Ref : \n"+fPath+" "+rfPath.string(),bkpRootFolder);
         }
     }
 
     // return 0;
+
     for (std::string i : sceneList)
         CopyFileAndFolderCommand(i, shotFolder);
     for (std::string i : assList)
@@ -385,21 +402,26 @@ int main(int argc, const char**argv) {
 
     while (std::getline(fin, line)) {
         sin.str(line.substr(line.find("=")+1));
-        if (line.find("projPath") != std::string::npos)
+        if (line.find("projPath") != std::string::npos) {
             sin >> projPath;
+        }
         sin.clear();
 
-        if (line.find("bkpFolder") != std::string::npos)
+        if (line.find("bkpFolder") != std::string::npos) {
             sin >> bkpFolder;
+        }
 
-        if (line.find("seqList") != std::string::npos)
+        if (line.find("seqList") != std::string::npos) {
             sin >> seqListStr;
+        }
 
-        if (line.find("shotList") != std::string::npos)
+        if (line.find("shotList") != std::string::npos) {
             sin >> shotListStr;
+        }
 
-        if (line.find("extList") != std::string::npos)
+        if (line.find("extList") != std::string::npos) {
             sin >> extListStr;
+        }
         sin.clear();
     }
     fin.close();
